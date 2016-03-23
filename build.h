@@ -34,7 +34,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 
     //if number of particles > k  : split
     for(Node& nd: tree){
-        if(nd.part_end-nd.part_start > k) {
+        if(nd.occupancy() > k) {
             nd.child_id=tree.size();
             create_children(nd,tree,m_label_ordered,N);
         }
