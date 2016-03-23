@@ -16,15 +16,16 @@ void create_children(const Node& parent, vector<Node>& tree,uint* m_index,const 
 vector<Node> build(const float* const x, const float* const y,
 const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* mass_sorted)
 {
-    //perform the xercise 2 and find the morton labels of the points
+    //perform the exrcise 2 and find the morton labels of the points
     int* keys=new int[N];
     uint* m_label=new uint[N];
+    uint* m_label_ordered=new uint[N];
     float xmin,ymin,ext;
     extent(N,x,y,xmin,ymin,ext);
     morton(N,x,y,xmin,ymin,ext,m_label);
     sort(N,m_label,keys);
-    reorder(N,keys,x,y,mass,xsorted,ysorted,mass_sorted);
-    delete[] keys;
+    reorder(N,keys,x,y,mass,m_label,xsorted,ysorted,mass_sorted,m_label_ordered);
+    delete[] keys; delete[] m_label;
 
     vector<Node> tree(1);
     //create root node
@@ -35,11 +36,11 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
     for(Node& nd: tree){
         if(nd.part_end-nd.part_start > k) {
             nd.child_id=tree.size();
-            create_children(nd,tree,m_label,N);
+            create_children(nd,tree,m_label_ordered,N);
         }
     }
 
-    delete[] m_label;
+    delete[] m_label_ordered;
     return tree;
 }
 
@@ -78,17 +79,6 @@ void create_children(const Node& parent, vector<Node>& tree,uint* m_index,const 
            child->part_start=-1;
            child->part_end=-2;
        }
-      /* for(int i=current_idx;i<parent.part_end;i++){
-           if( (m_index[i] & mask) == child->morton_id) {
-               current_idx=i;
-               break;
-           }
-       }
-       child->part_start=current_idx;
-       while((m_index[current_idx] & mask) == child->morton_id
-         &&  current_idx<N) current_idx++;
-       child->part_end=current_idx-1;
-       */
    }
 
 }

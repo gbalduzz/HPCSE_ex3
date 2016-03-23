@@ -7,7 +7,7 @@ void PrintInfo(const vector<Node>& );
 int main()
 {
     const int k=2;
-    const int N=100;
+    const int N=10000;
     float* x=new float[N];
     float* y=new float[N];
     float* mass=new float[N];
