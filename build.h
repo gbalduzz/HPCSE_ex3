@@ -9,6 +9,7 @@
 #include <assert.h>
 #include "node.h"
 #include "morton_ordering/morton_includes.inc"
+#include "profiler.h"
 using std::vector;
 
 void create_children(const Node& parent, vector<Node>& tree,uint* m_index,const int N);
@@ -28,17 +29,28 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
     delete[] keys; delete[] m_label;
 
     vector<Node> tree(1);
-    //create root node
-    tree[0].level=0; tree[0].morton_id=0;
-    tree[0].part_end=0; tree[0].part_end=N-1;
+    {
+        Profiler p("Tree creation");
+        //create root node
+        tree[0].level = 0;
+        tree[0].morton_id = 0;
+        tree[0].part_end = 0;
+        tree[0].part_end = N - 1;
 
-    //if number of particles > k  : split
-    for(Node& nd: tree){
-        if(nd.occupancy() > k) {
-            nd.child_id=tree.size();
-            create_children(nd,tree,m_label_ordered,N);
+        const int max_level = sizeof(int) * 4; //number of bits over 2
+        //if number of particles > k  : split
+        for (int i = 0; i < tree.size(); i++) {
+            if (tree[i].occupancy() > k) {
+                if (tree[i].level == max_level) { //no more space for branching
+                    tree[i].child_id = -5;
+                    continue;
+                }
+                tree[i].child_id = tree.size();
+                create_children(tree[i], tree, m_label_ordered, N);
+            }
         }
-    }
+
+    }//end Profiler
 
     delete[] m_label_ordered;
     return tree;

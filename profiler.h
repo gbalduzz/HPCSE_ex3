@@ -24,7 +24,7 @@ Profiler::Profiler(std::string n0):name(n0){
 
 inline Profiler::~Profiler() {
     clock_gettime(CLOCK_MONOTONIC, &t1);
-    std::cout<<"function "<<name<<"\t took "<<elapsed()<< "\t ns to complete"<<std::endl;
+    std::cout<<"function "<<name<<"\t took "<<elapsed()<< "\t s to complete"<<std::endl;
 }
 
 float Profiler::elapsed() {

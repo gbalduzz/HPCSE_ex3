@@ -6,22 +6,24 @@ void PrintInfo(const vector<Node>& );
 
 int main()
 {
-    const int k=1;
-    const int N=4;
-    float x[]={0.1,0.75,0.2,0.75};
-    float y[]={0.2,0.25,0.8,0.9};
-    float mass[]={1,1,1,1};
+    const int k=2;
+    const int N=1000;
+    float* x=new float[N];
+    float* y=new float[N];
+    float* mass=new float[N];
     float* xsorted=new float[N];
     float* ysorted=new float[N];
     float* mass_sorted=new float[N];
 
+    InitializeAtRandom(N,x,y,mass);
     vector<Node> tree=build(x,y,mass,N,k,xsorted,ysorted,mass_sorted);
-    PrintInfo(tree);
+    //PrintInfo(tree);
 
+    delete[] x; delete[] y; delete[] mass;
     delete[] xsorted; delete[] ysorted; delete[] mass_sorted;
 }
 
-/*#include <random>
+#include <random>
 void InitializeAtRandom(const int N,float* x,float* y,float* m)
 {
     std::mt19937_64 mt(0);
@@ -31,8 +33,7 @@ void InitializeAtRandom(const int N,float* x,float* y,float* m)
         y[i]=dist(mt);
         m[i]=1;
     }
-}*/
-
+}
 void PrintInfo(const vector<Node>& tree){
     int i=0;
     for(auto& node : tree){
