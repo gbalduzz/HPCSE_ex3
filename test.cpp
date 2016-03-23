@@ -15,4 +15,6 @@ int main()
     cout<<"first child is "<<bitset<32>(get_new_id(parent,2,0))<<endl;
     cout<<"second child is "<<bitset<32>(get_new_id(parent,2,1))<<endl;
     cout<<"fourth child is "<<bitset<32>(get_new_id(parent,2,3))<<endl;
+    cout<<endl;
+    cout<<"masked is "<<bitset<32>(get_new_id(parent,2,3) & create_mask(1))<<endl;
 }
