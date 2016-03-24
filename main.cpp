@@ -17,7 +17,7 @@ int main()
 
     InitializeAtRandom(N,x,y,mass);
     vector<Node> tree=build(x,y,mass,N,k,xsorted,ysorted,mass_sorted);
-    //PrintInfo(tree);
+    PrintInfo(tree);
 
     delete[] x; delete[] y; delete[] mass;
     delete[] xsorted; delete[] ysorted; delete[] mass_sorted;
@@ -38,7 +38,8 @@ void PrintInfo(const vector<Node>& tree){
     int i=0;
     for(auto& node : tree){
         cout<<"i="<<i<<" level: "<<node.level<<"\tfirst child: "<<node.child_id<<
-        "\t N_points: "<<node.occupancy()<<endl;
+        "\t N_points: "<<node.occupancy()<<
+                "\tcom: "<<node.xcom<<" , "<<node.ycom<<endl;
         i++;
     }
 }

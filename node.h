@@ -12,7 +12,7 @@ struct Node{
     int child_id=-1;
 
     int part_start,part_end;
-    float mass,xcom,ycom;
+    float mass=0,xcom=0,ycom=0;
 
     int occupancy()const {return std::max(part_end-part_start+1,0);}
 };

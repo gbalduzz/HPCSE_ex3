@@ -11,8 +11,7 @@
 #include "morton_ordering/morton_includes.inc"
 #include "profiler.h"
 using std::vector;
-
-void create_children(const Node& parent, vector<Node>& tree,uint* m_index,const int N);
+void create_children(const Node& parent, vector<Node>& tree,const float* x,const float* y,const float* m,const uint* label,const int N);
 
 vector<Node> build(const float* const x, const float* const y,
 const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* mass_sorted)
@@ -46,7 +45,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
                     continue;
                 }
                 tree[i].child_id = tree.size();
-                create_children(tree[i], tree, m_label_ordered, N);
+                create_children(tree[i], tree,xsorted,ysorted,mass_sorted, m_label_ordered, N);
             }
         }
 
@@ -71,21 +70,29 @@ uint create_mask(int level)
     return ((1 << 2*level)-1) << (n_bits-2*level);
 }
 
-void create_children(const Node& parent, vector<Node>& tree,uint* m_index,const int N)
+void create_children(const Node& parent, vector<Node>& tree,
+                     const float* x,const float* y,const float* m,const uint* label,const int N)
 {
     int current_idx=parent.part_start;
     uint mask=create_mask(parent.level+1);
-   for(int i=0;i<4;i++) {
+    for(int i=0;i<4;i++) {
        tree.push_back(Node());
        Node* child=&tree.back();
        child->level=parent.level+1;
        child->morton_id=get_new_id(parent.morton_id,child->level,i);
        //find points inside node
-       if((m_index[current_idx] & mask) == child->morton_id){//branch is not empty
+       if((label[current_idx] & mask) == child->morton_id){//branch is not empty
            child->part_start=current_idx;
-           while((m_index[current_idx] & mask) == child->morton_id
-                 &&  current_idx<N) current_idx++;
+           while((label[current_idx] & mask) == child->morton_id
+                 &&  current_idx<N) {
+               child->xcom+=m[current_idx]*x[current_idx];
+               child->ycom+=m[current_idx]*y[current_idx];
+               child->mass+=m[current_idx];
+               current_idx++;
+           }
            child->part_end=current_idx-1;
+           child->xcom/=child->mass;
+           child->ycom/=child->mass;
        }
        else{//is empty
            child->part_start=-1;
@@ -94,4 +101,5 @@ void create_children(const Node& parent, vector<Node>& tree,uint* m_index,const 
    }
 
 }
+
 #endif //EX3_BUILD_H
