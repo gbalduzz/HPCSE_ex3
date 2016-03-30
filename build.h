@@ -79,7 +79,7 @@ void create_children(const int parent_id, vector<Node>& tree,
     uint mask=create_mask(parent->level+1);
     for(int i=0;i<4;i++) {
        tree.push_back(Node());
-       Node* child=&tree.back();
+       Node* child=tree.data()+tree.size()-1;
        child->level=parent->level+1;
        child->morton_id=get_new_id(parent->morton_id,child->level,i);
        //find points inside node
