@@ -4,14 +4,17 @@
 
 #ifndef EX3_BUILD_H
 #define EX3_BUILD_H
-
 #include <vector>
 #include <assert.h>
 #include "node.h"
 #include "morton_ordering/morton_includes.inc"
 #include "profiler.h"
+
 using std::vector;
-void create_children(const int parent_id, vector<Node>& tree,const float* x,const float* y,const float* m,const uint* label,const int N);
+omp_lock_t lock_tree;
+void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k);
+     
+inline int check_size(const vector<Node>& tree);
 
 vector<Node> build(const float* const x, const float* const y,
 const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* mass_sorted)
@@ -32,6 +35,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 
     vector<Node> tree(1);
     tree.reserve(N*2);
+    omp_init_lock(&lock_tree);
     {
         Profiler p("Tree creation");
         //create root node
@@ -40,19 +44,17 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
         tree[0].part_start = 0;
         tree[0].part_end = N - 1;
 
-        const int max_level = sizeof(int) * 4; //number of bits over 2
+       /*
         //if number of particles > k  : split
-        for (int i = 0; i < tree.size(); i++) {
+        for (int i = 0; i < check_size(tree); i++) {
             if (tree[i].occupancy() > k) {
                 if (tree[i].level == max_level) { //no more space for branching
                     std::cout<<"Warning: No more space for branching"<<std::endl;
                     tree[i].child_id=-5;
                     continue;
                 }
-                tree[i].child_id = tree.size();
-                create_children(i, tree,xsorted,ysorted,mass_sorted, label_ordered, N);
-            }
-        }
+                tree[i].child_id = tree.size();*/
+        create_children_recursively(0, tree,xsorted,ysorted,mass_sorted, label_ordered, N,k);
 
     }//end Profiler
 
@@ -77,17 +79,31 @@ uint create_mask(int level)
             ((1 << 2*level)-1) << (n_bits-2*level);
 }
 
-void create_children(const int parent_id, vector<Node>& tree,
-                     const float* x,const float* y,const float* m,const uint* label,const int N)
+void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k)
 {
+    static const int max_level = sizeof(int) * 4; //number of bits over 2
+    if (tree[parent_id].occupancy() <= k) return;
+    if (tree[parent_id].level == max_level) { //no more space for branching
+        std::cout<<"Warning: No more space for branching"<<std::endl;
+        tree[parent_id].child_id=-5;
+        return;
+    }
     int current_idx=tree[parent_id].part_start;
     uint mask=create_mask(tree[parent_id].level+1);
+    int first_child_id;
+
+    //create enough space in the tree in a thread safe manner
+    omp_set_lock(&lock_tree);
+    first_child_id=tree.size();
+    for(int i=0;i<4;i++) tree.push_back(Node());
+    omp_unset_lock(&lock_tree);
+
+    tree[parent_id].child_id=first_child_id;
     for(int i=0;i<4;i++) {
-       tree.push_back(Node());
-       int child_id=tree.size()-1;
-       tree[child_id].level=tree[parent_id].level+1;
-       tree[child_id].morton_id=get_new_id(tree[parent_id].morton_id,tree[child_id].level,i);
-       //find points inside node
+        int child_id=first_child_id+i;
+        tree[child_id].level=tree[parent_id].level+1;
+        tree[child_id].morton_id=get_new_id(tree[parent_id].morton_id,tree[child_id].level,i);
+        //find points inside node
        if((label[current_idx] & mask) == tree[child_id].morton_id){//branch is not empty
            tree[child_id].part_start=current_idx;
            while((label[current_idx] & mask) == tree[child_id].morton_id
@@ -107,5 +123,4 @@ void create_children(const int parent_id, vector<Node>& tree,
        }
    }
 }
-
 #endif //EX3_BUILD_H
