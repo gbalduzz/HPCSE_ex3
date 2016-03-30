@@ -9,7 +9,7 @@ int main()
 {
     const int k=2;
     const int N=10;
-    const int n_print=1000;
+    const int n_print=10;
     float* x=new float[N];
     float* y=new float[N];
     float* mass=new float[N];
@@ -17,7 +17,7 @@ int main()
     float* ysorted=new float[N];
     float* mass_sorted=new float[N];
 
-    cout<<"parallelizing over "<<omp_get_max_threads()<<" threads"<<endl;
+    cout<<"parallelizing over "<<omp_get_max_threads()<<" threads"<<endl<<endl;
 
     InitializeAtRandom(N,x,y,mass);
     vector<Node> tree=build(x,y,mass,N,k,xsorted,ysorted,mass_sorted);
@@ -40,6 +40,7 @@ void InitializeAtRandom(const int N,float* x,float* y,float* m)
 }
 
 void PrintInfo(const vector<Node>& tree,int n_print){
+    cout<<endl;
     n_print=n_print>0 ?  std::min((int)tree.size(),n_print) : tree.size();
     for(int i=tree.size()-n_print;i<tree.size();i++){
         cout<<"i="<<i<<" level: "<<tree[i].level<<"\tfirst child: "<<tree[i].child_id<<

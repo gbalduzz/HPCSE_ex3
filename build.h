@@ -13,6 +13,7 @@
 using std::vector;
 omp_lock_t lock_tree;
 void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k);
+void compute_root_com(vector<Node>& tree);
      
 inline int check_size(const vector<Node>& tree);
 
@@ -44,17 +45,9 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
         tree[0].part_start = 0;
         tree[0].part_end = N - 1;
 
-       /*
-        //if number of particles > k  : split
-        for (int i = 0; i < check_size(tree); i++) {
-            if (tree[i].occupancy() > k) {
-                if (tree[i].level == max_level) { //no more space for branching
-                    std::cout<<"Warning: No more space for branching"<<std::endl;
-                    tree[i].child_id=-5;
-                    continue;
-                }
-                tree[i].child_id = tree.size();*/
+        omp_set_nested(1);
         create_children_recursively(0, tree,xsorted,ysorted,mass_sorted, label_ordered, N,k);
+        compute_root_com(tree);
 
     }//end Profiler
 
@@ -99,6 +92,7 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
     omp_unset_lock(&lock_tree);
 
     tree[parent_id].child_id=first_child_id;
+#pragma omp parallel for
     for(int i=0;i<4;i++) {
         int child_id=first_child_id+i;
         tree[child_id].level=tree[parent_id].level+1;
@@ -121,6 +115,19 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
            tree[child_id].part_start=-1;
            tree[child_id].part_end=-2;
        }
+        //iterate on child
+        create_children_recursively(child_id,tree,x,y,m,label,N,k);
    }
+}
+//TODO apply same principle recursively
+//TODO use find for part__end and part_start
+void compute_root_com(vector<Node>& tree){
+    for(int i=1;i<5;i++){
+        tree[0].mass+=tree[i].mass;
+        tree[0].xcom+=tree[i].mass*tree[i].xcom;
+        tree[0].ycom+=tree[i].mass*tree[i].ycom;
+    }
+    tree[0].xcom/=tree[0].mass;
+    tree[0].ycom/=tree[0].mass;
 }
 #endif //EX3_BUILD_H
