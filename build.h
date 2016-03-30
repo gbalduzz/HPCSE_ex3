@@ -42,7 +42,8 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
         for (int i = 0; i < tree.size(); i++) {
             if (tree[i].occupancy() > k) {
                 if (tree[i].level == max_level) { //no more space for branching
-                    tree[i].child_id = -5;
+                    std::cout<<"Warning: No more space for branching"<<std::endl;
+                    tree[i].child_id=-5;
                     continue;
                 }
                 tree[i].child_id = tree.size();
@@ -59,7 +60,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 inline int get_new_id(uint parent_id,int level,int i)
 {
 static const uint n_bits=sizeof(int)*8;
-    assert(2*level < n_bits);
+    assert(2*level <= n_bits);
     return parent_id  | i<< (n_bits-2*level);
 }
 
@@ -68,41 +69,40 @@ uint create_mask(int level)
 // the mask is 2*level 1s followed by 0s
 {
     static const uint n_bits=sizeof(int)*8;
-    assert(2*level < n_bits);
-    return ((1 << 2*level)-1) << (n_bits-2*level);
+    assert(2*level <= n_bits);
+    return 2*level==n_bits ? -1 : //otherwise returns all 0 instead of all 1
+            ((1 << 2*level)-1) << (n_bits-2*level);
 }
 
 void create_children(const int parent_id, vector<Node>& tree,
                      const float* x,const float* y,const float* m,const uint* label,const int N)
 {
-    const Node* const parent=tree.data()+parent_id;
-    current_idx=parent->part_start;
-    uint mask=create_mask(parent->level+1);
+    int current_idx=tree[parent_id].part_start;
+    uint mask=create_mask(tree[parent_id].level+1);
     for(int i=0;i<4;i++) {
        tree.push_back(Node());
-       Node* child=tree.data()+tree.size()-1;
-       child->level=parent->level+1;
-       child->morton_id=get_new_id(parent->morton_id,child->level,i);
+       int child_id=tree.size()-1;
+       tree[child_id].level=tree[parent_id].level+1;
+       tree[child_id].morton_id=get_new_id(tree[parent_id].morton_id,tree[child_id].level,i);
        //find points inside node
-       if((label[current_idx] & mask) == child->morton_id){//branch is not empty
-           child->part_start=current_idx;
-           while((label[current_idx] & mask) == child->morton_id
+       if((label[current_idx] & mask) == tree[child_id].morton_id){//branch is not empty
+           tree[child_id].part_start=current_idx;
+           while((label[current_idx] & mask) == tree[child_id].morton_id
                  &&  current_idx<N) {
-               child->xcom+=m[current_idx]*x[current_idx];
-               child->ycom+=m[current_idx]*y[current_idx];
-               child->mass+=m[current_idx];
+               tree[child_id].xcom+=m[current_idx]*x[current_idx];
+               tree[child_id].ycom+=m[current_idx]*y[current_idx];
+               tree[child_id].mass+=m[current_idx];
                current_idx++;
            }
-           child->part_end=current_idx-1;
-           child->xcom/=child->mass;
-           child->ycom/=child->mass;
+           tree[child_id].part_end=current_idx-1;
+           tree[child_id].xcom/=tree[child_id].mass;
+           tree[child_id].ycom/=tree[child_id].mass;
        }
        else{//is empty
-           child->part_start=-1;
-           child->part_end=-2;
+           tree[child_id].part_start=-1;
+           tree[child_id].part_end=-2;
        }
    }
-
 }
 
 #endif //EX3_BUILD_H

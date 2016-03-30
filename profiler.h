@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string>
+#include<iostream>
 
 class Profiler{
 public:

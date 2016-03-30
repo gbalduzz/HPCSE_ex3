@@ -9,7 +9,9 @@ int main()
 {
     cout<<"mask of 0 is "<<bitset<32>(create_mask(0))<<endl;
     cout<<"mask of 2 is "<<bitset<32>(create_mask(2))<<endl;
-    cout<<"mask of 3 is "<<bitset<32>(create_mask(3))<<endl;
+    cout<<"mask of 15 is "<<bitset<32>(create_mask(15))<<endl;
+    cout<<"mask of 16 is "<<bitset<32>(create_mask(16))<<endl;
+    cout<<"-1 is         "<<bitset<32>(-1)<<endl;
     cout<<endl;
     uint parent=create_mask(1);
     cout<<"first child is "<<bitset<32>(get_new_id(parent,2,0))<<endl;

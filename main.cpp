@@ -2,12 +2,13 @@
 #include "build.h"
 using std::cout; using std::endl;
 void InitializeAtRandom(const int N,float* x,float* y,float* m);
-void PrintInfo(const vector<Node>& );
+void PrintInfo(const vector<Node>& ,int n_print=-1);
 
 int main()
 {
     const int k=2;
-    const int N=1000000;
+    const int N=10000000;
+    const int n_print=1000;
     float* x=new float[N];
     float* y=new float[N];
     float* mass=new float[N];
@@ -17,7 +18,7 @@ int main()
 
     InitializeAtRandom(N,x,y,mass);
     vector<Node> tree=build(x,y,mass,N,k,xsorted,ysorted,mass_sorted);
-    PrintInfo(tree);
+    PrintInfo(tree,n_print);
 
     delete[] x; delete[] y; delete[] mass;
     delete[] xsorted; delete[] ysorted; delete[] mass_sorted;
@@ -34,12 +35,12 @@ void InitializeAtRandom(const int N,float* x,float* y,float* m)
         m[i]=1;
     }
 }
-void PrintInfo(const vector<Node>& tree){
-    int i=0;
-    for(auto& node : tree){
-        cout<<"i="<<i<<" level: "<<node.level<<"\tfirst child: "<<node.child_id<<
-        "\t N_points: "<<node.occupancy()<<
-                "\tcom: "<<node.xcom<<" , "<<node.ycom<<endl;
-        i++;
+
+void PrintInfo(const vector<Node>& tree,int n_print){
+    n_print=n_print>0 ?  std::min((int)tree.size(),n_print) : tree.size();
+    for(int i=tree.size()-n_print;i<tree.size();i++){
+        cout<<"i="<<i<<" level: "<<tree[i].level<<"\tfirst child: "<<tree[i].child_id<<
+        "\t N_points: "<<tree[i].occupancy()<<
+                "\tcom: "<<tree[i].xcom<<" , "<<tree[i].ycom<<endl;
     }
 }
