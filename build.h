@@ -28,7 +28,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
     delete[] keys; delete[] m_label;
 
     vector<Node> tree(1);
-    tree.reserve(N/k);
+    tree.reserve(N*2);
     {
         Profiler p("Tree creation");
         //create root node
@@ -68,6 +68,7 @@ uint create_mask(int level)
 // the mask is 2*level 1s followed by 0s
 {
     static const uint n_bits=sizeof(int)*8;
+    assert(2*level < n_bits);
     return ((1 << 2*level)-1) << (n_bits-2*level);
 }
 
@@ -75,7 +76,7 @@ void create_children(const int parent_id, vector<Node>& tree,
                      const float* x,const float* y,const float* m,const uint* label,const int N)
 {
     const Node* const parent=tree.data()+parent_id;
-    int current_idx=parent->part_start;
+    current_idx=parent->part_start;
     uint mask=create_mask(parent->level+1);
     for(int i=0;i<4;i++) {
        tree.push_back(Node());
