@@ -11,7 +11,7 @@
 #include "morton_ordering/morton_includes.inc"
 #include "profiler.h"
 using std::vector;
-void create_children(const Node& parent, vector<Node>& tree,const float* x,const float* y,const float* m,const uint* label,const int N);
+void create_children(const int parent_id, vector<Node>& tree,const float* x,const float* y,const float* m,const uint* label,const int N);
 
 vector<Node> build(const float* const x, const float* const y,
 const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* mass_sorted)
@@ -28,12 +28,13 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
     delete[] keys; delete[] m_label;
 
     vector<Node> tree(1);
+    tree.reserve(N/k);
     {
         Profiler p("Tree creation");
         //create root node
         tree[0].level = 0;
         tree[0].morton_id = 0;
-        tree[0].part_end = 0;
+        tree[0].part_start = 0;
         tree[0].part_end = N - 1;
 
         const int max_level = sizeof(int) * 4; //number of bits over 2
@@ -45,7 +46,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
                     continue;
                 }
                 tree[i].child_id = tree.size();
-                create_children(tree[i], tree,xsorted,ysorted,mass_sorted, m_label_ordered, N);
+                create_children(i, tree,xsorted,ysorted,mass_sorted, m_label_ordered, N);
             }
         }
 
@@ -70,16 +71,17 @@ uint create_mask(int level)
     return ((1 << 2*level)-1) << (n_bits-2*level);
 }
 
-void create_children(const Node& parent, vector<Node>& tree,
+void create_children(const int parent_id, vector<Node>& tree,
                      const float* x,const float* y,const float* m,const uint* label,const int N)
 {
-    int current_idx=parent.part_start;
-    uint mask=create_mask(parent.level+1);
+    const Node* const parent=tree.data()+parent_id;
+    int current_idx=parent->part_start;
+    uint mask=create_mask(parent->level+1);
     for(int i=0;i<4;i++) {
        tree.push_back(Node());
        Node* child=&tree.back();
-       child->level=parent.level+1;
-       child->morton_id=get_new_id(parent.morton_id,child->level,i);
+       child->level=parent->level+1;
+       child->morton_id=get_new_id(parent->morton_id,child->level,i);
        //find points inside node
        if((label[current_idx] & mask) == child->morton_id){//branch is not empty
            child->part_start=current_idx;
