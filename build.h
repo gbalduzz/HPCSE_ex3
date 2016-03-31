@@ -74,6 +74,8 @@ uint create_mask(int level)
 
 void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k) {
     static const int max_level = sizeof(int) * 4; //number of bits over 2
+    static Profiler prf("first recursion",1);
+    if(parent_id==0)  prf.start();
     if (tree[parent_id].occupancy() <= k) return;
     if (tree[parent_id].level == max_level) { //no more space for branching
         std::cout << "Warning: No more space for branching" << std::endl;
@@ -130,7 +132,7 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
                     break;
             }
     }
-#pragma omp parallel for
+    if(parent_id==0)  prf.stop();
     for(int i=0;i<4;i++)//iterate on children
         create_children_recursively(first_child_id+i,tree,x,y,m,label,N,k);
 }
