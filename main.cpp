@@ -47,7 +47,8 @@ void PrintInfo(const vector<Node>& tree,int n_print){
     for(int i=tree.size()-n_print;i<tree.size();i++){
         cout<<"i="<<i<<" level: "<<tree[i].level<<"\tfirst child: "<<tree[i].child_id<<
         "\t N_points: "<<tree[i].occupancy()<<
-               // "\tcom: "<<tree[i].xcom<<" , "<<tree[i].ycom<<endl;
-        "\t start,end "<<tree[i].part_start<<" , "<<tree[i].part_end<<endl;
+        "\t start,end "<<tree[i].part_start<<" , "<<tree[i].part_end<<
+        "\tcom: "<<tree[i].xcom<<" , "<<tree[i].ycom<<endl;
+
     }
 }

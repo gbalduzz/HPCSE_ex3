@@ -91,7 +91,6 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
 
     tree[parent_id].child_id = first_child_id;
     const int index_order[] = {0, 3, 1, 2};//traverse children in this order
-//#pragma omp parallel for default(shared) schedule(static)
     for (int i : index_order) {
         int child_id = first_child_id + i;
         tree[child_id].level = tree[parent_id].level + 1;
@@ -147,6 +146,7 @@ void compute_com(vector<Node>& tree,float *x,float* y,float* m){
 
 void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m){
     if(tree[id].child_id<0){
+        if(! tree[id].occupancy()) return;
         for(int i=tree[id].part_start;i<=tree[id].part_end;i++){
             tree[id].mass+=m[i];
             tree[id].xcom+=tree[i].mass*x[i];
