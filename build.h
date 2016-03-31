@@ -50,7 +50,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
         compute_com(tree,xsorted,ysorted,mass_sorted);
 
     }//end Profiler
-
+    omp_destroy_lock(&lock_tree);
     delete[] label_ordered;
     return tree;
 }
@@ -90,41 +90,45 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
     omp_unset_lock(&lock_tree);
 
     tree[parent_id].child_id = first_child_id;
+    bool done=false;//flag to exit when a child occupies the whole parent
     const int index_order[] = {0, 3, 1, 2};//traverse children in this order
     for (int i : index_order) {
         int child_id = first_child_id + i;
         tree[child_id].level = tree[parent_id].level + 1;
         tree[child_id].morton_id = get_new_id(tree[parent_id].morton_id, tree[child_id].level, i);
-        //find points inside tree[id]
-        switch (i) {
-            case 0:
-                tree[child_id].part_start = tree[parent_id].part_start;
-                tree[child_id].part_end = find_last(tree[parent_id].part_start, tree[parent_id].part_end, label, mask,
-                                                    tree[child_id].morton_id);
-                break;
+        //find points inside tree[child_id]
+        if(not done) switch (i) {
 
-            case 3:
-                tree[child_id].part_start = find_first(tree[parent_id].part_start, tree[parent_id].part_end, label,
-                                                       mask, tree[child_id].morton_id);
-                tree[child_id].part_end = tree[parent_id].part_end;
-                break;
-            case 1:
-                start= tree[first_child_id].part_end==-1 ?  tree[parent_id].part_start : tree[first_child_id].part_end+1;
-                tree[child_id].part_start = start;
-                tree[child_id].part_end = find_last(start, tree[parent_id].part_end, label, mask,
-                                                    tree[child_id].morton_id);
-                break;
-            default: //last one is determined by the others
-                end=  tree[first_child_id+3].part_start==-1 ? tree[parent_id].part_end : tree[first_child_id+3].part_start-1;
-                start=tree[first_child_id+1].part_end==-1   ?  tree[first_child_id].part_end==-1 ? tree[parent_id].part_start
+                case 0:
+                    tree[child_id].part_start = tree[parent_id].part_start;
+                    tree[child_id].part_end = find_last(tree[parent_id].part_start, tree[parent_id].part_end, label, mask,
+                                                        tree[child_id].morton_id);
+                    if(tree[child_id].part_end == tree[parent_id].part_end) done=true;
+                    break;
+
+                case 3:  //could use result of 0, but is just an additional iteration
+                    tree[child_id].part_start = find_first(tree[parent_id].part_start, tree[parent_id].part_end, label,
+                                                           mask, tree[child_id].morton_id);
+                    tree[child_id].part_end = tree[parent_id].part_end;
+                    if(tree[child_id].part_start == tree[parent_id].part_start) done=true;
+                    break;
+                case 1:
+                    start= tree[first_child_id].part_end==-1 ?  tree[parent_id].part_start : tree[first_child_id].part_end+1;
+                    tree[child_id].part_start = start;
+                    tree[child_id].part_end = find_last(start, tree[parent_id].part_end, label, mask,
+                                                        tree[child_id].morton_id);
+                    break;
+                default: //last one is determined by the others
+                    end=  tree[first_child_id+3].part_start==-1 ? tree[parent_id].part_end : tree[first_child_id+3].part_start-1;
+                    start=tree[first_child_id+1].part_end==-1   ?  tree[first_child_id].part_end==-1 ? tree[parent_id].part_start
                                                                                                      : tree[first_child_id].part_end+1
                                                                 : tree[first_child_id+1].part_end+1;
-                if(end>=start) {//not empty
-                    tree[child_id].part_start = start;
-                    tree[child_id].part_end = end;
-                }
-                break;
-        }
+                    if(end>=start) {//not empty
+                        tree[child_id].part_start = start;
+                        tree[child_id].part_end = end;
+                    }
+                    break;
+            }
     }
 #pragma omp parallel for
     for(int i=0;i<4;i++)//iterate on children

@@ -8,8 +8,8 @@ void PrintInfo(const vector<Node>& ,int n_print=-1);
 int main()
 {
     const int k=2;
-    const int N=10;
-    const int n_print=-1;
+    const int N=1e7;
+    const int n_print=10;
     float* x=new float[N];
     float* y=new float[N];
     float* mass=new float[N];
@@ -17,6 +17,7 @@ int main()
     float* ysorted=new float[N];
     float* mass_sorted=new float[N];
 
+    cout<<"N= "<<N<<endl;
     omp_set_nested(1);
     omp_set_max_active_levels(2);
     cout<<"parallelizing over "<<omp_get_max_threads()<<" threads"<<endl<<endl;
