@@ -7,8 +7,8 @@ void PrintInfo(const vector<Node>& ,int n_print=-1);
 int main()
 {
     const int k=2;
-    const int N=10000000;
-    const int n_print=1000;
+    const int N=1e7;
+    const int n_print=10;
     float* x=new float[N];
     float* y=new float[N];
     float* mass=new float[N];
@@ -16,6 +16,7 @@ int main()
     float* ysorted=new float[N];
     float* mass_sorted=new float[N];
 
+    cout<<"N= "<<N<<endl;
     InitializeAtRandom(N,x,y,mass);
     vector<Node> tree=build(x,y,mass,N,k,xsorted,ysorted,mass_sorted);
     PrintInfo(tree,n_print);

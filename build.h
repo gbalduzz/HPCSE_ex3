@@ -12,6 +12,7 @@
 #include "profiler.h"
 using std::vector;
 void create_children(const int parent_id, vector<Node>& tree,const float* x,const float* y,const float* m,const uint* label,const int N);
+void compute_root_com(vector<Node>& tree,float *x,float* y,float* m);
 
 vector<Node> build(const float* const x, const float* const y,
 const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* mass_sorted)
@@ -50,7 +51,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
                 create_children(i, tree,xsorted,ysorted,mass_sorted, m_label_ordered, N);
             }
         }
-
+        compute_root_com(tree,xsorted, ysorted,mass_sorted);
     }//end Profiler
 
     delete[] m_label_ordered;
@@ -105,4 +106,13 @@ void create_children(const int parent_id, vector<Node>& tree,
    }
 }
 
+void compute_root_com(vector<Node>& tree,float *x,float* y,float* m){
+    for(int i=1;i<5;i++){
+        tree[0].mass+=tree[i].mass;
+        tree[0].xcom+=tree[i].mass*tree[i].xcom;
+        tree[0].ycom+=tree[i].mass*tree[i].ycom;
+    }
+    tree[0].xcom/=tree[0].mass;
+    tree[0].ycom/=tree[0].mass;
+}
 #endif //EX3_BUILD_H
