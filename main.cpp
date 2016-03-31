@@ -1,5 +1,4 @@
 #include <iostream>
-#include<omp.h>
 #include "build.h"
 using std::cout; using std::endl;
 void InitializeAtRandom(const int N,float* x,float* y,float* m);
@@ -8,18 +7,14 @@ void PrintInfo(const vector<Node>& ,int n_print=-1);
 int main()
 {
     const int k=2;
-    const int N=10;
-    const int n_print=-1;
+    const int N=10000000;
+    const int n_print=10;
     float* x=new float[N];
     float* y=new float[N];
     float* mass=new float[N];
     float* xsorted=new float[N];
     float* ysorted=new float[N];
     float* mass_sorted=new float[N];
-
-    //omp_set_max_active_levels(2);
-    /**/omp_set_num_threads(1);
-    cout<<"parallelizing over "<<omp_get_max_threads()<<" threads"<<endl<<endl;
 
     InitializeAtRandom(N,x,y,mass);
     vector<Node> tree=build(x,y,mass,N,k,xsorted,ysorted,mass_sorted);

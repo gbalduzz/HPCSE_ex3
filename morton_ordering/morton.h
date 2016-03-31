@@ -11,7 +11,6 @@ uint   interleave(uint x,uint y);
 void morton(const int N,const float * const x,const float * const y,const float xmin,const float ymin, const float ext, uint * index)
 //takes array or coords and return array of square's label where the particle resides
 {
-  #pragma omp parallel for schedule(static)
 for(int i=0;i<N;i++){
     index[i]=interleave(integer_mantissa(x[i],xmin,ext+xmin),integer_mantissa(y[i],ymin,ext+ymin));
 }

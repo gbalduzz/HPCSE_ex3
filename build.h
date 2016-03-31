@@ -12,7 +12,6 @@
 #include "find_last.h"
 
 using std::vector;
-omp_lock_t lock_tree;
 void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k);
 void compute_com(vector<Node>& tree,float *x,float* y,float* m);
      
@@ -37,7 +36,6 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 
     vector<Node> tree(1);
     tree.reserve(N*2);
-    omp_init_lock(&lock_tree);
     {
         Profiler p("Tree creation");
         //create root tree[id]
@@ -83,30 +81,31 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
     uint mask = create_mask(tree[parent_id].level + 1);
     int first_child_id,start,end;
 
-    //create enough space in the tree in a thread safe manner
-    omp_set_lock(&lock_tree);
+    //create enough space in the tree
     first_child_id = tree.size();
     for (int i = 0; i < 4; i++) tree.push_back(Node());
-    omp_unset_lock(&lock_tree);
 
     tree[parent_id].child_id = first_child_id;
     const int index_order[] = {0, 3, 1, 2};//traverse children in this order
+    bool done=false;//flag to exit when a child occupies the whole parent
     for (int i : index_order) {
         int child_id = first_child_id + i;
         tree[child_id].level = tree[parent_id].level + 1;
         tree[child_id].morton_id = get_new_id(tree[parent_id].morton_id, tree[child_id].level, i);
-        //find points inside tree[id]
-        switch (i) {
+        //find points inside tree[child_id]
+        if(not done) switch (i) {
             case 0:
                 tree[child_id].part_start = tree[parent_id].part_start;
                 tree[child_id].part_end = find_last(tree[parent_id].part_start, tree[parent_id].part_end, label, mask,
                                                     tree[child_id].morton_id);
+                if(tree[child_id].part_end == tree[parent_id].part_end) done=true;
                 break;
 
-            case 3:
+            case 3: //could use result of 0, but is just an additional iteration
                 tree[child_id].part_start = find_first(tree[parent_id].part_start, tree[parent_id].part_end, label,
                                                        mask, tree[child_id].morton_id);
                 tree[child_id].part_end = tree[parent_id].part_end;
+                if(tree[child_id].part_start == tree[parent_id].part_start) done=true;
                 break;
             case 1:
                 start= tree[first_child_id].part_end==-1 ?  tree[parent_id].part_start : tree[first_child_id].part_end+1;
@@ -129,8 +128,7 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
     for(int i=0;i<4;i++)//iterate on children
         create_children_recursively(first_child_id+i,tree,x,y,m,label,N,k);
 }
-//TODO apply same principle recursively
-//TODO use find for part__end and part_start DONE?
+
 void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m);
 
 void compute_com(vector<Node>& tree,float *x,float* y,float* m){
