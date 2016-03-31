@@ -7,16 +7,17 @@
 using namespace std;
 int main()
 {
-    cout<<"mask of 0 is "<<bitset<32>(create_mask(0))<<endl;
-    cout<<"mask of 2 is "<<bitset<32>(create_mask(2))<<endl;
-    cout<<"mask of 15 is "<<bitset<32>(create_mask(15))<<endl;
-    cout<<"mask of 16 is "<<bitset<32>(create_mask(16))<<endl;
-    cout<<"-1 is         "<<bitset<32>(-1)<<endl;
-    cout<<endl;
-    uint parent=create_mask(1);
-    cout<<"first child is "<<bitset<32>(get_new_id(parent,2,0))<<endl;
-    cout<<"second child is "<<bitset<32>(get_new_id(parent,2,1))<<endl;
-    cout<<"fourth child is "<<bitset<32>(get_new_id(parent,2,3))<<endl;
-    cout<<endl;
-    cout<<"masked is "<<bitset<32>(get_new_id(parent,2,3) & create_mask(1))<<endl;
+    const int N=10;
+    uint v[N]={3,3,3,3,3,5,5,5,5,5};
+    uint mask=-1;
+    int l=find_last(0,9,v,mask,3);
+    int f=find_first(0,9,v,mask,5);
+    cout<<"last 3 hit= "<<l<<endl;
+    cout<<"first 5  hit= "<<f<<endl;
+
+    uint v2[N]={0,0,0,0,0,0,0,0,0,5};
+    l=find_last(0,9,v2,mask,3);
+    f=find_first(0,9,v2,mask,5);
+    cout<<"last v2= "<<l<<endl;
+    cout<<"first v2= "<<f<<endl;
 }

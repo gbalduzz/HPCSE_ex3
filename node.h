@@ -14,9 +14,9 @@ struct Node{
     int part_start,part_end;
     float mass,xcom,ycom;
 
-    Node():mass(0),xcom(0),ycom(0),child_id(-1),part_start(0),part_end(-6){}
+    Node():mass(0),xcom(0),ycom(0),child_id(-1),part_start(-1),part_end(-1){}
 
-    int occupancy()const {return std::max(part_end-part_start+1,0);}
+    int occupancy()const {return (part_start>=0 && part_end>=0) ? part_end-part_start+1 : 0;}
 };
 
 #endif //EX3_TREE_H

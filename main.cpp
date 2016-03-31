@@ -17,6 +17,8 @@ int main()
     float* ysorted=new float[N];
     float* mass_sorted=new float[N];
 
+    //omp_set_max_active_levels(2);
+    /**/omp_set_num_threads(1);
     cout<<"parallelizing over "<<omp_get_max_threads()<<" threads"<<endl<<endl;
 
     InitializeAtRandom(N,x,y,mass);
