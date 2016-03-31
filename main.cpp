@@ -19,7 +19,7 @@ int main()
 
     cout<<"N= "<<N<<endl;
    // omp_set_nested(1);
-    //omp_set_max_active_levels(2);
+    //git cecomp_set_max_active_levels(2);
     cout<<"parallelizing over "<<omp_get_max_threads()<<" threads"<<endl<<endl;
 
     InitializeAtRandom(N,x,y,mass);
