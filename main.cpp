@@ -9,7 +9,7 @@ int main()
 {
     const int k=2;
     const int N=10;
-    const int n_print=10;
+    const int n_print=-1;
     float* x=new float[N];
     float* y=new float[N];
     float* mass=new float[N];
@@ -47,6 +47,7 @@ void PrintInfo(const vector<Node>& tree,int n_print){
     for(int i=tree.size()-n_print;i<tree.size();i++){
         cout<<"i="<<i<<" level: "<<tree[i].level<<"\tfirst child: "<<tree[i].child_id<<
         "\t N_points: "<<tree[i].occupancy()<<
-                "\tcom: "<<tree[i].xcom<<" , "<<tree[i].ycom<<endl;
+               // "\tcom: "<<tree[i].xcom<<" , "<<tree[i].ycom<<endl;
+        "\t start,end "<<tree[i].part_start<<" , "<<tree[i].part_end<<endl;
     }
 }

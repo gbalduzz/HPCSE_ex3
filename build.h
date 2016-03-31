@@ -72,53 +72,63 @@ uint create_mask(int level)
             ((1 << 2*level)-1) << (n_bits-2*level);
 }
 
-void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k)
-{
+void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k) {
     static const int max_level = sizeof(int) * 4; //number of bits over 2
     if (tree[parent_id].occupancy() <= k) return;
     if (tree[parent_id].level == max_level) { //no more space for branching
-        std::cout<<"Warning: No more space for branching"<<std::endl;
-        tree[parent_id].child_id=-5;
+        std::cout << "Warning: No more space for branching" << std::endl;
+        tree[parent_id].child_id = -5;
         return;
     }
-    uint mask=create_mask(tree[parent_id].level+1);
-    int first_child_id;
+    uint mask = create_mask(tree[parent_id].level + 1);
+    int first_child_id,start,end;
 
     //create enough space in the tree in a thread safe manner
     omp_set_lock(&lock_tree);
-    first_child_id=tree.size();
-    for(int i=0;i<4;i++) tree.push_back(Node());
+    first_child_id = tree.size();
+    for (int i = 0; i < 4; i++) tree.push_back(Node());
     omp_unset_lock(&lock_tree);
 
-    tree[parent_id].child_id=first_child_id;
+    tree[parent_id].child_id = first_child_id;
+    const int index_order[] = {0, 3, 1, 2};//traverse children in this order
 //#pragma omp parallel for default(shared) schedule(static)
-    for(int i=0;i<4;i++) {
-        int child_id=first_child_id+i;
-        tree[child_id].level=tree[parent_id].level+1;
-        tree[child_id].morton_id=get_new_id(tree[parent_id].morton_id,tree[child_id].level,i);
+    for (int i : index_order) {
+        int child_id = first_child_id + i;
+        tree[child_id].level = tree[parent_id].level + 1;
+        tree[child_id].morton_id = get_new_id(tree[parent_id].morton_id, tree[child_id].level, i);
         //find points inside tree[id]
-        if(i==0){
-            if((label[tree[parent_id].part_start] & mask)==tree[child_id].morton_id) {//not empty
+        switch (i) {
+            case 0:
                 tree[child_id].part_start = tree[parent_id].part_start;
                 tree[child_id].part_end = find_last(tree[parent_id].part_start, tree[parent_id].part_end, label, mask,
                                                     tree[child_id].morton_id);
-            }
-        }
-        else if(i==3){
-            if((label[tree[parent_id].part_end] & mask) == tree[child_id].morton_id) {//not empty
+                break;
+
+            case 3:
                 tree[child_id].part_start = find_first(tree[parent_id].part_start, tree[parent_id].part_end, label,
                                                        mask, tree[child_id].morton_id);
                 tree[child_id].part_end = tree[parent_id].part_end;
-            }
+                break;
+            case 1:
+                start= tree[first_child_id].part_end==-1 ?  tree[parent_id].part_start : tree[first_child_id].part_end+1;
+                tree[child_id].part_start = start;
+                tree[child_id].part_end = find_last(start, tree[parent_id].part_end, label, mask,
+                                                    tree[child_id].morton_id);
+                break;
+            default: //last one is determined by the others
+                end=  tree[first_child_id+3].part_start==-1 ? tree[parent_id].part_end : tree[first_child_id+3].part_start-1;
+                start=tree[first_child_id+1].part_end==-1   ?  tree[first_child_id].part_end==-1 ? tree[parent_id].part_start
+                                                                                                     : tree[first_child_id].part_end+1
+                                                                : tree[first_child_id+1].part_end+1;
+                if(end>=start) {//not empty
+                    tree[child_id].part_start = start;
+                    tree[child_id].part_end = end;
+                }
+                break;
         }
-        else{
-            tree[child_id].part_start=find_first(tree[parent_id].part_start,tree[parent_id].part_end,label,mask,tree[child_id].morton_id);
-            if((label[tree[child_id].part_start] & mask)==tree[parent_id].morton_id )  //not empty
-                tree[child_id].part_end=find_last(tree[parent_id].part_start,tree[parent_id].part_end,label,mask,tree[child_id].morton_id);
-        }
-        //iterate on child
-        create_children_recursively(child_id,tree,x,y,m,label,N,k);
-   }
+    }
+    for(int i=0;i<4;i++)//iterate on children
+        create_children_recursively(first_child_id+i,tree,x,y,m,label,N,k);
 }
 //TODO apply same principle recursively
 //TODO use find for part__end and part_start DONE?
