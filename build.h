@@ -134,6 +134,7 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
 void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m);
 
 void compute_com(vector<Node>& tree,float *x,float* y,float* m){
+    assert(tree.size()>=5); //at least one branching
     for(int i=1;i<5;i++){
         solve_dependencies(tree,i,x,y,m);
         tree[0].mass+=tree[i].mass;
@@ -149,8 +150,8 @@ void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m){
         if(! tree[id].occupancy()) return;
         for(int i=tree[id].part_start;i<=tree[id].part_end;i++){
             tree[id].mass+=m[i];
-            tree[id].xcom+=tree[i].mass*x[i];
-            tree[id].ycom+=tree[i].mass*y[i];
+            tree[id].xcom+=m[i]*x[i];
+            tree[id].ycom+=m[i]*y[i];
         }
     }
     else{
