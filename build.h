@@ -6,10 +6,13 @@
 #define EX3_BUILD_H
 #include <vector>
 #include <assert.h>
+#include <cmath>
 #include "node.h"
 #include "morton_ordering/morton_includes.inc"
 #include "profiler.h"
 #include "find_last.h"
+
+#define MAX_DEPTH 2
 
 using std::vector;
 omp_lock_t lock_tree;
@@ -50,12 +53,11 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 #pragma omp single
             {
                 Profiler p2("children recursion");
-#pragma omp task
                 {create_children_recursively(0, tree, xsorted, ysorted, mass_sorted, label, N, k);}
 #pragma omp taskwait
                 p2.stop();
                 Profiler p3("mass recursion");
-                compute_com(tree, xsorted, ysorted, mass_sorted);
+                {compute_com(tree, xsorted, ysorted, mass_sorted);}
                 p3.stop();
             }
         }//end omp parallel
@@ -85,6 +87,7 @@ uint create_mask(int level)
 
 void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k) {
     static const int max_level = sizeof(int) * 4; //number of bits over 2
+    static const int max_thread_depth=std::ceil(std::log2(omp_get_max_threads())/2.);
     if (tree[parent_id].occupancy() <= k) return;
     if (tree[parent_id].level == max_level) { //no more space for branching
         std::cout << "Warning: No more space for branching" << std::endl;
@@ -141,17 +144,20 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
                     break;
             }
     }
-    for(int i=0;i<4;i++)//iterate on children
-#pragma omp task shared(tree)
-    {create_children_recursively(first_child_id+i,tree,x,y,m,label,N,k);}
-}
+
+
+        for (int i = 0; i < 4; i++)//iterate on children
+#pragma omp task shared(tree) if(tree[parent_id].level<MAX_DEPTH)
+        { create_children_recursively(first_child_id + i, tree, x, y, m, label, N, k); }
+#pragma omp taskwait
+    }
 
 void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m);
 
 void compute_com(vector<Node>& tree,float *x,float* y,float* m){
     assert(tree.size()>=5); //at least one branching
     for(int i=1;i<5;i++)
-#pragma omp task shared(tree)
+#pragma omp task default(shared)
     {solve_dependencies(tree,i,x,y,m);}
 #pragma omp taskwait
 
