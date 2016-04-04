@@ -22,18 +22,17 @@ vector<Node> build(const float* const x, const float* const y,
 const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* mass_sorted)
 {
     //perform the exrcise 2 and find the morton labels of the points
-        int *keys = new int[N];
+        uint *keys = new uint[N];
         uint *label = new uint[N];
-        uint *label_ordered = new uint[N];
         float xmin, ymin, ext;
     {
         Profiler p("old morton labelling");
         extent(N, x, y, xmin, ymin, ext);
         morton(N, x, y, xmin, ymin, ext, label);
         sort(N, label, keys);
-        reorder(N, keys, x, y, mass, label, xsorted, ysorted, mass_sorted, label_ordered);
+        reorder(N, keys, x, y, mass, label, xsorted, ysorted, mass_sorted);
     }
-    delete[] keys; delete[] label;
+    delete[] keys;
 
     vector<Node> tree(1);
     tree.reserve(N*2);
@@ -51,7 +50,8 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 #pragma omp single
             {
                 Profiler p2("children recursion");
-                create_children_recursively(0, tree, xsorted, ysorted, mass_sorted, label_ordered, N, k);
+#pragma omp task
+                {create_children_recursively(0, tree, xsorted, ysorted, mass_sorted, label, N, k);}
 #pragma omp taskwait
                 p2.stop();
                 Profiler p3("mass recursion");
@@ -62,7 +62,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 
     }//end Profiler
     omp_destroy_lock(&lock_tree);
-    delete[] label_ordered;
+    delete[] label;
     return tree;
 }
 
