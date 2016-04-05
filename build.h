@@ -15,7 +15,6 @@
 #define MAX_DEPTH 2
 
 using std::vector;
-omp_lock_t lock_tree;
 void create_children_recursively(const int parent_id,vector<Node>&tree,const float* x,const float* y,const float* m,const uint* label,const int N,const int k);
 void compute_com(vector<Node>& tree,float *x,float* y,float* m);
      
@@ -39,7 +38,6 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
 
     vector<Node> tree(1);
     tree.reserve(N*2);
-    omp_init_lock(&lock_tree);
     {
         Profiler p("Tree creation");
         //create root tree[id]
@@ -63,7 +61,6 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
         }//end omp parallel
 
     }//end Profiler
-    omp_destroy_lock(&lock_tree);
     delete[] label;
     return tree;
 }
@@ -98,10 +95,11 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
     int first_child_id,start,end;
 
     //create enough space in the tree in a thread safe manner
-    omp_set_lock(&lock_tree);
-    first_child_id = tree.size();
-    for (int i = 0; i < 4; i++) tree.push_back(Node());
-    omp_unset_lock(&lock_tree);
+#pragma omp critical
+    {
+        first_child_id = tree.size();
+        for (int i = 0; i < 4; i++) tree.push_back(Node());
+    }
 
     tree[parent_id].child_id = first_child_id;
     bool done=false;//flag to exit when a child occupies the whole parent
