@@ -12,6 +12,7 @@
 #include "profiler.h"
 #include "find_last.h"
 
+//max depth at which tasks are spawned
 #define MAX_DEPTH 2
 
 using std::vector;
@@ -181,6 +182,7 @@ void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m){
         int child_id;
         for(int i=0;i<4;i++){
             child_id=tree[id].child_id+i;
+#pragma omp task shared(tree) if(tree[child_id].level<MAX_DEPTH)
             solve_dependencies(tree,child_id,x,y,m);
             tree[id].mass+=tree[child_id].mass;
             tree[id].xcom+=tree[child_id].mass*tree[child_id].xcom;
