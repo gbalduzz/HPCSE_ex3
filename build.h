@@ -18,15 +18,14 @@ vector<Node> build(const float* const x, const float* const y,
 const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* mass_sorted)
 {
     //perform the exrcise 2 and find the morton labels of the points
-    int* keys=new int[N];
-    uint* m_label=new uint[N];
-    uint* m_label_ordered=new uint[N];
+    uint* keys=new uint[N];
+    uint* label=new uint[N];
     float xmin,ymin,ext;
     extent(N,x,y,xmin,ymin,ext);
-    morton(N,x,y,xmin,ymin,ext,m_label);
-    sort(N,m_label,keys);
-    reorder(N,keys,x,y,mass,m_label,xsorted,ysorted,mass_sorted,m_label_ordered);
-    delete[] keys; delete[] m_label;
+    morton(N,x,y,xmin,ymin,ext,label);
+    sort(N,label,keys);
+    reorder(N,keys,x,y,mass,xsorted,ysorted,mass_sorted);
+    delete[] keys;
 
     vector<Node> tree(1);
     tree.reserve(N*2);
@@ -48,13 +47,13 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
                     continue;
                 }
                 tree[i].child_id = tree.size();
-                create_children(i, tree,xsorted,ysorted,mass_sorted, m_label_ordered, N);
+                create_children(i, tree,xsorted,ysorted,mass_sorted, label, N);
             }
         }
         compute_root_com(tree,xsorted, ysorted,mass_sorted);
     }//end Profiler
 
-    delete[] m_label_ordered;
+    delete[] label;
     return tree;
 }
 
