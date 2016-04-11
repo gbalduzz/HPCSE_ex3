@@ -1,6 +1,7 @@
 #include <iostream>
 #include<omp.h>
 #include "build.h"
+#undef VERBOSE
 using std::cout; using std::endl;
 void InitializeAtRandom(const int N,float* x,float* y,float* m);
 void PrintInfo(const vector<Node>& ,int n_print=-1);
@@ -24,8 +25,9 @@ int main()
 
     InitializeAtRandom(N,x,y,mass);
     vector<Node> tree=build(x,y,mass,N,k,xsorted,ysorted,mass_sorted);
+#ifdef VERBOSE
     PrintInfo(tree,n_print);
-
+#endif
     delete[] x; delete[] y; delete[] mass;
     delete[] xsorted; delete[] ysorted; delete[] mass_sorted;
 }

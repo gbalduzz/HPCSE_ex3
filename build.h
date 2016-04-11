@@ -57,6 +57,7 @@ const float* mass,const int N,const int k, float* xsorted,float*ysorted,float* m
                 p2.stop();
                 Profiler p3("mass recursion");
                 {compute_com(tree, xsorted, ysorted, mass_sorted);}
+#pragma omp taskwait
                 p3.stop();
             }
         }//end omp parallel
@@ -77,7 +78,7 @@ uint create_mask(int level)
 //create a mask that ignores the bits in the morton index corresponding to a higher level
 // the mask is 2*level 1s followed by 0s
 {
-    static const uint n_bits=sizeof(int)*8;
+    static const uint n_bits=sizeof(uint)*8;
     assert(2*level <= n_bits);
     return 2*level==n_bits ? -1 : //otherwise returns all 0 instead of all 1
             ((1 << 2*level)-1) << (n_bits-2*level);
@@ -148,7 +149,6 @@ void create_children_recursively(const int parent_id,vector<Node>&tree,const flo
         for (int i = 0; i < 4; i++)//iterate on children
 #pragma omp task shared(tree) if(tree[parent_id].level<MAX_DEPTH)
         { create_children_recursively(first_child_id + i, tree, x, y, m, label, N, k); }
-#pragma omp taskwait
     }
 
 void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m);
@@ -179,11 +179,12 @@ void solve_dependencies(vector<Node>& tree,int id,float*x,float*y,float*m){
         }
     }
     else{
+        for(int i=0;i<4;i++)
+#pragma omp task shared(tree) if(tree[id].level<MAX_DEPTH)
+                solve_dependencies(tree,tree[id].child_id,x,y,m);
         int child_id;
         for(int i=0;i<4;i++){
             child_id=tree[id].child_id+i;
-#pragma omp task shared(tree) if(tree[child_id].level<MAX_DEPTH)
-            solve_dependencies(tree,child_id,x,y,m);
             tree[id].mass+=tree[child_id].mass;
             tree[id].xcom+=tree[child_id].mass*tree[child_id].xcom;
             tree[id].ycom+=tree[child_id].mass*tree[child_id].ycom;
